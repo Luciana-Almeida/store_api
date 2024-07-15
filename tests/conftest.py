@@ -4,7 +4,8 @@ import asyncio
 from uuid import UUID
 from store.db.mongo import db_client
 from store.schemas.product import ProductIn, ProductUpdate
-from store.usecases.product import product_usecase
+from store.usecases.product import ProductUsecase
+from store.core.config import settings
 from tests.factories import product_data, products_data
 from httpx import AsyncClient
 
@@ -19,6 +20,17 @@ def event_loop():
 @pytest.fixture
 def mongo_client():
     return db_client.get()
+
+@pytest.fixture
+async def client_db():
+    client = AsyncIOMotorClient(settings.DATABASE_URL)
+    # Extraia o nome do banco de dados da URL e adicione '_test'
+    db_name = settings.DATABASE_URL.split("/")[-1] + "_test"  
+    db = client[db_name]  
+    await db.products.delete_many({})
+    yield db
+    await db.products.delete_many({})
+
 
 
 @pytest.fixture(autouse=True)
